@@ -2,6 +2,20 @@ defmodule Procom.Products do
   alias Procom.Products.Product
   alias Procom.Workers.Storage
 
+  @spec get_product(sku :: String.t()) :: {:ok, Product.t()} | {:error, reason :: String.t()}
+  def get_product(sku) do
+    case Storage.get(sku) do
+      {:error, :not_found} -> {:error, :not_found}
+      {_key, product} -> {:ok, product}
+    end
+  end
+
+  # TODO: maybe change the result type, instead of a list of tuples
+  # use a list of structs
+  # By now we just define this to have a unique point of interaction
+  # with products without passing through storage module
+  defdelegate list_all, to: Storage
+
   @spec insert_product(map) :: {:ok, Product.t()} | {:error, Ecto.Changeset.t()}
   def insert_product(attrs) do
     %Product{}

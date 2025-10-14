@@ -23,11 +23,11 @@ defmodule Procom.ProductsTest do
       rating: 5
     }
 
-    assert {:error, :not_found} = Storage.get(attrs.sku)
+    assert {:error, :not_found} = Products.get_product(attrs.sku)
     assert {:ok, %{sku: product_sku}} = Products.insert_product(attrs)
     # force sync operation to avoid race condition
     Storage.sync()
-    assert {:ok, %{sku: ^product_sku}} = Storage.get(attrs.sku)
+    assert {:ok, %{sku: ^product_sku}} = Products.get_product(attrs.sku)
   end
 
   test "Duplicates are not allowed, in case of duplicate we override data" do
@@ -42,13 +42,13 @@ defmodule Procom.ProductsTest do
 
     updated_attrs = Map.put(attrs, :name, "macbook")
 
-    assert {:error, :not_found} = Storage.get(attrs.sku)
+    assert {:error, :not_found} = Products.get_product(attrs.sku)
     assert {:ok, %{sku: product_sku}} = Products.insert_product(attrs)
 
     # force sync operation to avoid race condition
     Storage.sync()
 
-    assert {:ok, %{sku: ^product_sku}} = Storage.get(attrs.sku)
+    assert {:ok, %{sku: ^product_sku}} = Products.get_product(attrs.sku)
 
     assert [_] = Storage.list_all()
     # try to insert again
@@ -57,7 +57,7 @@ defmodule Procom.ProductsTest do
     # force sync again
     Storage.sync()
 
-    assert [{_key, product}] = Storage.list_all()
+    assert [{_key, product}] = Products.list_all()
     assert product.name == "macbook"
   end
 
