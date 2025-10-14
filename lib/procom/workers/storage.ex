@@ -8,11 +8,13 @@ defmodule Procom.Workers.Storage do
   end
 
   def insert(product_sku, product_data) do
-    GenServer.cast(__MODULE__, {:insert_product, product_sku, product_data})
+    GenServer.cast(__MODULE__, {:insert_product, sanitize_key(product_sku), product_data})
   end
 
   def get(key) do
     # table has public read access so we can read directly from here
+    key = sanitize_key(key)
+
     case :ets.lookup(@table_name, key) do
       [{^key, product}] -> {:ok, product}
       [] -> {:error, :not_found}
@@ -73,7 +75,9 @@ defmodule Procom.Workers.Storage do
 
   @impl true
   def handle_cast({:insert_product, key, product}, state) do
-    :ets.insert(@table_name, {key, product})
+    :ets.insert(@table_name, {sanitize_key(key), product})
     {:noreply, state}
   end
+
+  defp sanitize_key(value), do: value |> String.trim() |> String.downcase()
 end
