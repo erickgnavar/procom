@@ -79,5 +79,6 @@ defmodule Procom.Workers.Storage do
     {:noreply, state}
   end
 
-  defp sanitize_key(value), do: value |> String.trim() |> String.downcase()
+  defp sanitize_key(value) when is_binary(value), do: value |> String.trim() |> String.downcase()
+  defp sanitize_key(value), do: value |> to_string() |> sanitize_key()
 end
