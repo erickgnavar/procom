@@ -1,6 +1,51 @@
 defmodule ProcomWeb.ProductController do
   use ProcomWeb, :controller
   alias Procom.Products
+  alias ProcomWeb.Schemas.{CompareResponse}
+  alias OpenApiSpex.Schema
+
+  use OpenApiSpex.ControllerSpecs
+
+  tags ["products"]
+
+  operation :compare,
+    summary: "Compare products by SKU",
+    description: """
+    Retrieves multiple products by their SKUs for comparison.
+
+    - SKUs are case-insensitive and will be normalized (trimmed and lowercased)
+    - Duplicate SKUs are automatically removed
+    - Non-existent SKUs will return null values
+    - Empty or invalid SKUs are filtered out
+    """,
+    parameters: [
+      sku: [
+        in: :query,
+        name: "sku[]",
+        description:
+          "Product SKU(s) to compare. Can be repeated multiple times for multiple products.",
+        required: true,
+        schema: %Schema{
+          type: :array,
+          items: %Schema{type: :string},
+          minItems: 1,
+          example: ["laptop-001", "mouse-005", "headphone-003"]
+        },
+        style: :form,
+        explode: true
+      ]
+    ],
+    responses: [
+      ok: {"Success", "application/json", CompareResponse},
+      bad_request:
+        {"Bad Request - Invalid parameters", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             error: %Schema{type: :string, example: "Invalid SKU format"}
+           }
+         }}
+    ]
 
   def compare(conn, params) do
     result = search_products(params)

@@ -19,7 +19,7 @@ defmodule ProcomWeb.ProductControllerTest do
       insert_sample_products()
 
       # only 2 products must be returned
-      conn = get(conn, "/compare", %{"sku" => ["LAPTOP-001", "CHAIR-020", "MOUSE-005"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["LAPTOP-001", "CHAIR-020", "MOUSE-005"]})
       body = json_response(conn, 200)
 
       assert Map.has_key?(body, "laptop-001")
@@ -30,7 +30,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "returns empty map when no SKU parameter provided", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare")
+      conn = get(conn, "/api/compare")
       body = json_response(conn, 200)
 
       assert body == %{}
@@ -39,7 +39,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "returns empty map when sku parameter is empty list", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => []})
+      conn = get(conn, "/api/compare", %{"sku" => []})
       body = json_response(conn, 200)
 
       assert body == %{}
@@ -48,7 +48,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "handles single SKU as string instead of list", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => "LAPTOP-001"})
+      conn = get(conn, "/api/compare", %{"sku" => "LAPTOP-001"})
       body = json_response(conn, 200)
 
       assert Map.has_key?(body, "laptop-001")
@@ -57,7 +57,7 @@ defmodule ProcomWeb.ProductControllerTest do
 
     test "returns all nil values when no products exist in storage", %{conn: conn} do
       # Don't insert any products
-      conn = get(conn, "/compare", %{"sku" => ["LAPTOP-001", "MOUSE-005"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["LAPTOP-001", "MOUSE-005"]})
       body = json_response(conn, 200)
 
       assert body["laptop-001"] == nil
@@ -67,7 +67,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "handles duplicate SKUs in request", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => ["LAPTOP-001", "LAPTOP-001", "LAPTOP-001"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["LAPTOP-001", "LAPTOP-001", "LAPTOP-001"]})
       body = json_response(conn, 200)
 
       # Should have 1 entry (duplicates removed and normalized)
@@ -78,7 +78,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "handles duplicate SKUs with different cases", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => ["LAPTOP-001", "laptop-001", "LaPtOp-001"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["LAPTOP-001", "laptop-001", "LaPtOp-001"]})
       body = json_response(conn, 200)
 
       # Should deduplicate to single entry
@@ -95,7 +95,7 @@ defmodule ProcomWeb.ProductControllerTest do
         ["LAPTOP-001", "MOUSE-005", "HEADPHONE-003"] ++
           Enum.map(1..97, fn i -> "NON-EXISTENT-#{i}" end)
 
-      conn = get(conn, "/compare", %{"sku" => skus})
+      conn = get(conn, "/api/compare", %{"sku" => skus})
       body = json_response(conn, 200)
 
       assert Map.has_key?(body, "laptop-001")
@@ -117,7 +117,7 @@ defmodule ProcomWeb.ProductControllerTest do
 
       Storage.sync()
 
-      conn = get(conn, "/compare", %{"sku" => ["SPECIAL-#@!-001"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["SPECIAL-#@!-001"]})
       body = json_response(conn, 200)
 
       assert Map.has_key?(body, "special-#@!-001")
@@ -126,7 +126,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "handles empty string SKU", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => ["", "LAPTOP-001", ""]})
+      conn = get(conn, "/api/compare", %{"sku" => ["", "LAPTOP-001", ""]})
       body = json_response(conn, 200)
 
       refute Map.has_key?(body, "")
@@ -135,7 +135,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "handles nil in SKU list", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => [nil, "LAPTOP-001"]})
+      conn = get(conn, "/api/compare", %{"sku" => [nil, "LAPTOP-001"]})
       body = json_response(conn, 200)
 
       # Should handle gracefully
@@ -145,7 +145,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "is case-insensitive for SKUs", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => ["laptop-001", "LAPTOP-001", "LaPtOp-001"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["laptop-001", "LAPTOP-001", "LaPtOp-001"]})
       body = json_response(conn, 200)
 
       # All variations should match and be normalized to lowercase
@@ -159,7 +159,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "handles mixed case SKUs correctly", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => ["LAPTOP-001", "mouse-005", "HeAdPhOnE-003"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["LAPTOP-001", "mouse-005", "HeAdPhOnE-003"]})
       body = json_response(conn, 200)
 
       # All should be found and normalized
@@ -172,7 +172,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "handles whitespace in SKUs", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => [" LAPTOP-001 ", "LAPTOP-001"]})
+      conn = get(conn, "/api/compare", %{"sku" => [" LAPTOP-001 ", "LAPTOP-001"]})
       body = json_response(conn, 200)
 
       # After trimming, should be deduplicated
@@ -184,7 +184,7 @@ defmodule ProcomWeb.ProductControllerTest do
       insert_sample_products()
 
       long_sku = String.duplicate("A", 10_000)
-      conn = get(conn, "/compare", %{"sku" => [long_sku, "LAPTOP-001"]})
+      conn = get(conn, "/api/compare", %{"sku" => [long_sku, "LAPTOP-001"]})
       body = json_response(conn, 200)
 
       assert body[String.downcase(long_sku)] == nil
@@ -204,7 +204,7 @@ defmodule ProcomWeb.ProductControllerTest do
 
       Storage.sync()
 
-      conn = get(conn, "/compare", %{"sku" => [12345, "12345"]})
+      conn = get(conn, "/api/compare", %{"sku" => [12345, "12345"]})
       body = json_response(conn, 200)
 
       # After normalization, should have one entry
@@ -214,7 +214,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "returns correct structure for found products", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => ["LAPTOP-001"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["LAPTOP-001"]})
       body = json_response(conn, 200)
 
       product = body["laptop-001"]
@@ -230,7 +230,7 @@ defmodule ProcomWeb.ProductControllerTest do
     test "returns correct structure with lowercase SKU request", %{conn: conn} do
       insert_sample_products()
 
-      conn = get(conn, "/compare", %{"sku" => ["laptop-001"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["laptop-001"]})
       body = json_response(conn, 200)
 
       product = body["laptop-001"]
@@ -251,7 +251,7 @@ defmodule ProcomWeb.ProductControllerTest do
 
       Storage.sync()
 
-      conn = get(conn, "/compare?sku[]=PRODUCT%2BWITH%20SPACE")
+      conn = get(conn, "/api/compare?sku[]=PRODUCT%2BWITH%20SPACE")
       body = json_response(conn, 200)
 
       assert Map.has_key?(body, "product+with space")
@@ -272,7 +272,7 @@ defmodule ProcomWeb.ProductControllerTest do
                 ["laptop-001", "mouse-005"]
               end
 
-            conn = get(conn, "/compare", %{"sku" => skus})
+            conn = get(conn, "/api/compare", %{"sku" => skus})
             json_response(conn, 200)
           end)
         end)
@@ -292,7 +292,7 @@ defmodule ProcomWeb.ProductControllerTest do
       insert_sample_products()
 
       # Try to send sku as a map (malformed)
-      conn = get(conn, "/compare", %{"sku" => %{"invalid" => "structure"}})
+      conn = get(conn, "/api/compare", %{"sku" => %{"invalid" => "structure"}})
       body = json_response(conn, 200)
 
       # Should handle gracefully
@@ -311,7 +311,7 @@ defmodule ProcomWeb.ProductControllerTest do
 
       Storage.sync()
 
-      conn = get(conn, "/compare", %{"sku" => ["special-abc-123", "SPECIAL-ABC-123"]})
+      conn = get(conn, "/api/compare", %{"sku" => ["special-abc-123", "SPECIAL-ABC-123"]})
       body = json_response(conn, 200)
 
       # Should de duplicate and normalize
