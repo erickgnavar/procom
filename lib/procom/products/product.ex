@@ -4,10 +4,10 @@ defmodule Procom.Products.Product do
 
   sku: unique identifier along all the system, must be lower case
   name: free text
-  image_url: valid URL
+  image_url: valid public URL
   description: free text
   price: integer value in cents
-  rating: integer value in cents
+  rating: integer value between 1 and 5 inclusive
   """
   use Ecto.Schema
   import Ecto.Changeset
