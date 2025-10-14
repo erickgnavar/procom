@@ -30,11 +30,19 @@ defmodule Procom.Products.Product do
     |> cast(attrs, @all_fields)
     |> validate_required(@all_fields)
     |> validate_url(:image_url)
+    |> sanitize_sku()
     # TODO: a price can have price 0?
     |> validate_number(:price, greater_than: 0)
     # we assume a rating system of 5 stars
     |> validate_number(:rating, greater_than: 0)
     |> validate_number(:rating, less_than: 6)
+  end
+
+  defp sanitize_sku(%{valid?: false} = changeset), do: changeset
+
+  defp sanitize_sku(%{valid?: true} = changeset) do
+    new_sku = changeset |> get_field(:sku) |> String.trim() |> String.downcase()
+    put_change(changeset, :sku, new_sku)
   end
 
   def validate_url(changeset, field) do
