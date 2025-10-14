@@ -1,18 +1,11 @@
 # Procom
 
-To start your Phoenix server:
+Service to make multiple products comparisons.
 
-* Run `mix setup` to install and setup dependencies
-* Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+## Run
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+Check [run.md](./docs/run.md) for instructions about running this project on development.
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+## Deployment
 
-## Learn more
-
-* Official website: https://www.phoenixframework.org/
-* Guides: https://hexdocs.pm/phoenix/overview.html
-* Docs: https://hexdocs.pm/phoenix
-* Forum: https://elixirforum.com/c/phoenix-forum
-* Source: https://github.com/phoenixframework/phoenix
+Check [deployment](./docs/deployment.md) for configuration details about this project deployment.
