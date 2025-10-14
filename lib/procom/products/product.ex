@@ -12,6 +12,9 @@ defmodule Procom.Products.Product do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @all_fields [:sku, :name, :description, :image_url, :price, :rating]
+
+  @derive {Jason.Encoder, only: @all_fields}
   schema "products" do
     field :sku, :string
     field :name, :string
@@ -21,8 +24,6 @@ defmodule Procom.Products.Product do
     field :rating, :integer
     # TODO: add custom attributes
   end
-
-  @all_fields [:sku, :name, :description, :image_url, :price, :rating]
 
   @doc false
   def changeset(link, attrs) do

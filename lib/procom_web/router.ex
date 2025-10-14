@@ -18,6 +18,8 @@ defmodule ProcomWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+    # TODO: define auth for this endpoint
+    get "/compare", ProductController, :compare
   end
 
   # Other scopes may use custom stacks.
