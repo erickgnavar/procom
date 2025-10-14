@@ -64,6 +64,11 @@ defmodule Procom.MixProject do
   defp aliases do
     [
       setup: ["deps.get"],
+      ci: [
+        "format --check-formatted",
+        "deps.unlock --check-unused",
+        "test"
+      ],
       precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"]
     ]
   end
