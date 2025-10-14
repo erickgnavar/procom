@@ -53,6 +53,7 @@ defmodule Procom.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:ecto, "~> 3.13"},
       {:open_api_spex, "~> 3.22"},
+      {:prom_ex, "~> 1.11"},
       {:bandit, "~> 1.5"}
     ]
   end

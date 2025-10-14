@@ -8,6 +8,7 @@ defmodule Procom.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      Procom.PromEx,
       ProcomWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:procom, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Procom.PubSub},
