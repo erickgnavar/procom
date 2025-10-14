@@ -13,6 +13,8 @@ defmodule Procom.Application do
       {Phoenix.PubSub, name: Procom.PubSub},
       # Start a worker by calling: Procom.Worker.start_link(arg)
       # {Procom.Worker, arg},
+      # in memory products storage
+      Procom.Workers.Storage,
       # Start to serve requests, typically the last entry
       ProcomWeb.Endpoint
     ]
