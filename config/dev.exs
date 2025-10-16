@@ -9,7 +9,7 @@ import Config
 config :procom, ProcomWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env("PORT") || "4000")],
+  http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4000")],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
@@ -70,3 +70,15 @@ config :phoenix_live_view,
   debug_attributes: true,
   # Enable helpful, but potentially expensive runtime checks
   enable_expensive_runtime_checks: true
+
+config :procom, Procom.PromEx,
+  manual_metrics_start_delay: :no_delay,
+  drop_metrics_groups: [],
+  grafana: [
+    host: System.get_env("GRAFANA_HOST", "http://grafana:3000"),
+    username: "admin",
+    password: "admin",
+    upload_dashboards_on_start: true,
+    folder_name: "Procom Dashboards",
+    annotate_app_lifecycle: true
+  ]

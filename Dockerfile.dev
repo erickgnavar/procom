@@ -1,0 +1,21 @@
+FROM elixir:1.18-alpine
+
+# Install dependencies
+RUN apk add --no-cache \
+    build-base \
+    git \
+    nodejs \
+    npm \
+    inotify-tools \
+    ncurses-libs
+
+WORKDIR /app
+
+RUN mix local.hex --force && \
+    mix local.rebar --force
+
+ENV MIX_ENV=dev
+
+EXPOSE 4000
+
+CMD ["sh", "-c", "mix deps.get && mix compile && iex -S mix phx.server"]

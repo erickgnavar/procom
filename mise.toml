@@ -1,3 +1,10 @@
 [tools]
 elixir = "1.18.4-otp-28"
 erlang = "28.0.2"
+
+[tasks.run_on_docker]
+run = "docker-compose -f docker-compose.dev.yaml up"
+
+# in case dashboards are not installed automatically on start up we can use this command
+[tasks.install_grafana_dashboards]
+run = "docker-compose -f docker-compose.dev.yaml exec app mix prom_ex.dashboard.publish"
