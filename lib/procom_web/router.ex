@@ -43,6 +43,7 @@ defmodule ProcomWeb.Router do
     pipe_through :api
 
     get "/compare", ProductController, :compare
+    put "/load", ProductController, :load
   end
 
   # Enable LiveDashboard in development

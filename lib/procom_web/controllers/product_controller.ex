@@ -1,7 +1,7 @@
 defmodule ProcomWeb.ProductController do
   use ProcomWeb, :controller
   alias Procom.Products
-  alias ProcomWeb.Schemas.{CompareResponse}
+  alias ProcomWeb.Schemas.{CompareResponse, ProductRequest, Product, ErrorResponse}
   alias OpenApiSpex.Schema
 
   use OpenApiSpex.ControllerSpecs
@@ -54,6 +54,83 @@ defmodule ProcomWeb.ProductController do
     # case there is not other layer on top of this service like an api
     # gateway
     json(conn, result)
+  end
+
+  operation :load,
+    summary: "Load a single product",
+    description: """
+    Creates and loads a new product into the storage system.
+
+    In case a product with the same SKU already exist it will be replaced
+
+    All fields are required and will be validated:
+    - SKU must be unique and will be normalized (lowercase, trimmed)
+    - Price must be greater than 0
+    - Rating must be between 1 and 5
+    - Image URL must be a valid URL format
+    """,
+    request_body: {
+      "Product data",
+      "application/json",
+      ProductRequest,
+      required: true,
+      example: %{
+        sku: "LAPTOP-001",
+        name: "MacBook Pro 16-inch",
+        description: "Powerful laptop with M3 chip, 16GB RAM, and 512GB SSD",
+        image_url: "https://example.com/images/macbook-pro-16.jpg",
+        price: 249_900,
+        rating: 5
+      }
+    },
+    responses: [
+      ok: {
+        "Product loaded successfully",
+        "application/json",
+        Product,
+        example: %{
+          sku: "laptop-001",
+          name: "MacBook Pro 16-inch",
+          description: "Powerful laptop with M3 chip, 16GB RAM, and 512GB SSD",
+          image_url: "https://example.com/images/macbook-pro-16.jpg",
+          price: 249_900,
+          rating: 5
+        }
+      },
+      bad_request: {
+        "Validation errors",
+        "application/json",
+        ErrorResponse,
+        example: %{
+          sku: ["can't be blank"],
+          price: ["must be greater than 0"],
+          rating: ["must be less than 6"]
+        }
+      }
+    ]
+
+  def load(conn, params) do
+    case Products.insert_product(params) do
+      {:ok, product} ->
+        json(conn, product)
+
+      {:error, errors} ->
+        response = format_errors(errors)
+
+        conn
+        |> put_status(400)
+        |> json(response)
+    end
+  end
+
+  defp format_errors(errors) do
+    changeset = %Ecto.Changeset{errors: errors}
+
+    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
+      Regex.replace(~r"%{(\w+)}", message, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
   end
 
   @spec search_products(map) :: map

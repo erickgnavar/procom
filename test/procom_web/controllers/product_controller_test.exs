@@ -321,6 +321,581 @@ defmodule ProcomWeb.ProductControllerTest do
     end
   end
 
+  describe "PUT /api/load" do
+    test "creates a product with valid data", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro 16-inch",
+        "description" => "Powerful laptop with M3 chip, 16GB RAM, and 512GB SSD",
+        "image_url" => "https://example.com/images/macbook-pro-16.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 200)
+      response = json_response(conn, 200)
+
+      # SKU is normalized to lowercase
+      assert response["sku"] == "laptop-001"
+      assert response["name"] == "MacBook Pro 16-inch"
+      assert response["description"] == "Powerful laptop with M3 chip, 16GB RAM, and 512GB SSD"
+      assert response["image_url"] == "https://example.com/images/macbook-pro-16.jpg"
+      assert response["price"] == 249_900
+      assert response["rating"] == 5
+    end
+
+    test "product is actually stored in ETS", %{conn: conn} do
+      product_params = %{
+        "sku" => "MOUSE-005",
+        "name" => "Logitech MX Master 3S",
+        "description" => "Ergonomic wireless mouse",
+        "image_url" => "https://example.com/mouse.jpg",
+        "price" => 9900,
+        "rating" => 5
+      }
+
+      put(conn, ~p"/api/load", product_params)
+
+      Storage.sync()
+
+      # Verify it's in storage
+      {:ok, product} = Products.get_product("mouse-005")
+      assert product.name == "Logitech MX Master 3S"
+    end
+
+    test "returns 400 when sku is missing", %{conn: conn} do
+      product_params = %{
+        "name" => "MacBook Pro 16-inch",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["sku"] == ["can't be blank"]
+    end
+
+    test "returns 400 when name is missing", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["name"] == ["can't be blank"]
+    end
+
+    test "returns 400 when description is missing", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["description"] == ["can't be blank"]
+    end
+
+    test "returns 400 when image_url is missing", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["image_url"] == ["can't be blank"]
+    end
+
+    test "returns 400 when price is missing", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["price"] == ["can't be blank"]
+    end
+
+    test "returns 400 when rating is missing", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["rating"] == ["can't be blank"]
+    end
+
+    test "returns 400 when multiple fields are missing", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001"
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+
+      assert Map.has_key?(response, "name")
+      assert Map.has_key?(response, "description")
+      assert Map.has_key?(response, "image_url")
+      assert Map.has_key?(response, "price")
+      assert Map.has_key?(response, "rating")
+    end
+
+    test "returns 400 when price is zero", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 0,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["price"] == ["must be greater than 0"]
+    end
+
+    test "returns 400 when price is negative", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => -100,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["price"] == ["must be greater than 0"]
+    end
+
+    test "returns 400 when rating is zero", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 0
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["rating"] == ["must be greater than 0"]
+    end
+
+    test "returns 400 when rating is greater than 5", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 6
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["rating"] == ["must be less than 6"]
+    end
+
+    test "returns 400 when rating is negative", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => -1
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["rating"] == ["must be greater than 0"]
+    end
+
+    test "returns 400 when image_url is invalid", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "not-a-valid-url",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+      assert response["image_url"] == ["must be a valid HTTP or HTTPS URL"]
+    end
+
+    test "accepts valid rating of 1", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 1
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 200)
+      response = json_response(conn, 200)
+      assert response["rating"] == 1
+    end
+
+    test "accepts valid rating of 5", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 200)
+      response = json_response(conn, 200)
+      assert response["rating"] == 5
+    end
+
+    test "normalizes SKU to lowercase", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      response = json_response(conn, 200)
+      assert response["sku"] == "laptop-001"
+    end
+
+    test "trims whitespace from SKU", %{conn: conn} do
+      product_params = %{
+        "sku" => "  LAPTOP-001  ",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      response = json_response(conn, 200)
+      assert response["sku"] == "laptop-001"
+    end
+
+    test "handles special characters in SKU", %{conn: conn} do
+      product_params = %{
+        "sku" => "SPECIAL-SKU#123",
+        "name" => "Special Product",
+        "description" => "Product with special SKU",
+        "image_url" => "https://example.com/special.jpg",
+        "price" => 1000,
+        "rating" => 3
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      response = json_response(conn, 200)
+      assert response["sku"] == "special-sku#123"
+    end
+
+    test "accepts minimum valid price of 1", %{conn: conn} do
+      product_params = %{
+        "sku" => "CHEAP-001",
+        "name" => "Cheap Item",
+        "description" => "Very cheap item",
+        "image_url" => "https://example.com/cheap.jpg",
+        "price" => 1,
+        "rating" => 3
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 200)
+      response = json_response(conn, 200)
+      assert response["price"] == 1
+    end
+
+    test "accepts large price values", %{conn: conn} do
+      product_params = %{
+        "sku" => "EXPENSIVE-001",
+        "name" => "Expensive Item",
+        "description" => "Very expensive item",
+        "image_url" => "https://example.com/expensive.jpg",
+        "price" => 999_999_999,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 200)
+      response = json_response(conn, 200)
+      assert response["price"] == 999_999_999
+    end
+
+    test "accepts http URLs", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "http://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 200)
+      response = json_response(conn, 200)
+      assert response["image_url"] == "http://example.com/laptop.jpg"
+    end
+
+    test "accepts https URLs", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 200)
+      response = json_response(conn, 200)
+      assert response["image_url"] == "https://example.com/laptop.jpg"
+    end
+
+    test "handles long descriptions", %{conn: conn} do
+      long_description = String.duplicate("a", 10000)
+
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => long_description,
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 200)
+      response = json_response(conn, 200)
+      assert response["description"] == long_description
+    end
+
+    test "handles unicode characters in name and description", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro 日本語 🚀",
+        "description" => "Powerful laptop with émojis 🎉 and spëcial çharacters",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 200)
+      response = json_response(conn, 200)
+      assert response["name"] == "MacBook Pro 日本語 🚀"
+      assert response["description"] == "Powerful laptop with émojis 🎉 and spëcial çharacters"
+    end
+
+    test "returns 400 when body is empty", %{conn: conn} do
+      conn = put(conn, ~p"/api/load", %{})
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+
+      assert is_map(response)
+      assert map_size(response) > 0
+    end
+
+    test "returns 400 when price is not an integer", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => "not-a-number",
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+    end
+
+    test "returns 400 when rating is not an integer", %{conn: conn} do
+      product_params = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => "not-a-number"
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+    end
+
+    test "multiple products can be loaded", %{conn: conn} do
+      product1 = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro",
+        "description" => "Powerful laptop",
+        "image_url" => "https://example.com/laptop.jpg",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      product2 = %{
+        "sku" => "MOUSE-005",
+        "name" => "Logitech MX Master",
+        "description" => "Ergonomic mouse",
+        "image_url" => "https://example.com/mouse.jpg",
+        "price" => 9900,
+        "rating" => 4
+      }
+
+      conn1 = put(conn, ~p"/api/load", product1)
+      conn2 = put(conn, ~p"/api/load", product2)
+
+      assert json_response(conn1, 200)
+      assert json_response(conn2, 200)
+
+      Storage.sync()
+
+      # Verify both are in storage
+      {:ok, _} = Products.get_product("laptop-001")
+      {:ok, _} = Products.get_product("mouse-005")
+    end
+
+    test "loading duplicate SKU overwrites existing product", %{conn: conn} do
+      product_v1 = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro v1",
+        "description" => "First version",
+        "image_url" => "https://example.com/v1.jpg",
+        "price" => 200_000,
+        "rating" => 4
+      }
+
+      product_v2 = %{
+        "sku" => "LAPTOP-001",
+        "name" => "MacBook Pro v2",
+        "description" => "Second version",
+        "image_url" => "https://example.com/v2.jpg",
+        "price" => 250_000,
+        "rating" => 5
+      }
+
+      put(conn, ~p"/api/load", product_v1)
+      conn2 = put(conn, ~p"/api/load", product_v2)
+
+      assert json_response(conn2, 200)
+      response = json_response(conn2, 200)
+
+      # Verify the second version is stored
+      assert response["name"] == "MacBook Pro v2"
+      assert response["price"] == 250_000
+
+      Storage.sync()
+
+      {:ok, stored} = Products.get_product("laptop-001")
+      assert stored.name == "MacBook Pro v2"
+    end
+
+    test "handles empty string values as validation errors", %{conn: conn} do
+      product_params = %{
+        "sku" => "",
+        "name" => "",
+        "description" => "",
+        "image_url" => "",
+        "price" => 249_900,
+        "rating" => 5
+      }
+
+      conn = put(conn, ~p"/api/load", product_params)
+
+      assert json_response(conn, 400)
+      response = json_response(conn, 400)
+
+      assert response["sku"] == ["can't be blank"]
+      assert response["name"] == ["can't be blank"]
+      assert response["description"] == ["can't be blank"]
+      assert response["image_url"] == ["can't be blank"]
+    end
+  end
+
   # TODO: move this to a fixtures module
   defp insert_sample_products do
     Products.insert_product(%{
