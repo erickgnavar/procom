@@ -24,3 +24,7 @@ containers:
 
 Grafana dashboards should be installed automatically, in case they aren't we can run `mise run` and choose
 `install_grafana_dashboards`, after that we can see some dashboards for application.
+
+## Openapi spec
+
+There is an openapi spec already configured, we can go to http://localhost:4000/swaggerui to nagivate using `SwaggerUI`.
