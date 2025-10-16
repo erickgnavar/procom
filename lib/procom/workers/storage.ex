@@ -25,6 +25,14 @@ defmodule Procom.Workers.Storage do
     :ets.tab2list(@table_name)
   end
 
+  def backup(path) do
+    GenServer.cast(__MODULE__, {:backup, path})
+  end
+
+  def restore(path) do
+    GenServer.call(__MODULE__, {:restore, path})
+  end
+
   def delete(product_sku) do
     :ets.delete(@table_name, product_sku)
   end
@@ -71,6 +79,27 @@ defmodule Procom.Workers.Storage do
   def handle_call(:delete_all, _from, state) do
     :ets.delete_all_objects(@table_name)
     {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_call({:restore, path}, _from, state) do
+    return_value =
+      case :ets.file2tab(String.to_charlist(path), table: @table_name) do
+        {:ok, _table_ref} -> :ok
+        {:error, reason} -> {:error, reason}
+      end
+
+    {:reply, return_value, state}
+  end
+
+  @impl true
+  def handle_cast({:backup, path}, state) do
+    case :ets.tab2file(@table_name, String.to_charlist(path)) do
+      :ok -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+
+    {:noreply, state}
   end
 
   @impl true

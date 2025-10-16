@@ -16,6 +16,8 @@ defmodule Procom.Application do
       # {Procom.Worker, arg},
       # in memory products storage
       Procom.Workers.Storage,
+      # Backup/restore products data
+      Procom.Workers.Store,
       # Start to serve requests, typically the last entry
       ProcomWeb.Endpoint
     ]
