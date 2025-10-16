@@ -11,3 +11,4 @@ These are the environment variables required:
 - `PHX_HOST`: domain where the application will be deployed, this should match with the actual domain so requests won't
   be rejected.
 - `SECRET_KEY_BASE`: seed for signing/encrypting processes, it must be at least 64 bytes long.
+- `BACKUP_PATH`: Path where products data will be stored
