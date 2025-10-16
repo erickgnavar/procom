@@ -63,6 +63,7 @@ defmodule Procom.Workers.Store do
 
   defp backup_path do
     # this will generate a path inside application root directory
-    Application.app_dir(:procom, "backup.ets")
+    default_path = Application.app_dir(:procom, "backup.ets")
+    Application.get_env(:procom, :backup_path) || default_path
   end
 end

@@ -7,8 +7,11 @@ services:
     container_name: procom-app
     ports:
       - "4000:4000"
+    environment:
+      - BACKUP_PATH=/tmp/backup.ets
     volumes:
       - .:/app
+      - backup-data:/tmp/
     networks:
       - monitoring
 
@@ -55,3 +58,4 @@ networks:
 volumes:
   prometheus-data:
   grafana-data:
+  backup-data:
