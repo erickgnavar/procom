@@ -28,3 +28,14 @@ Grafana dashboards should be installed automatically, in case they aren't we can
 ## Openapi spec
 
 There is an openapi spec already configured, we can go to http://localhost:4000/swaggerui to nagivate using `SwaggerUI`.
+
+## Generate sample data
+
+To generate sample data we can run
+
+```shell
+python3 scripts/generate_products.py
+python3 scripts/load_products.py
+```
+
+This will insert 1000 products, all the sample data is in `scripts/products.json`.
